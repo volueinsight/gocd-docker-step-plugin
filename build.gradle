@@ -1,0 +1,104 @@
+plugins {
+    //id 'com.avast.gradle.docker-compose' version '0.6.9'
+    //id 'org.unbroken-dome.test-sets' version '3.0.1'
+    //id 'com.github.ben-manes.versions' version '0.17.0'
+    id 'co.riiid.gradle' version '0.4.2'
+}
+
+group 'no.h_nh'
+version '0.1.0'
+
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply from: 'plugin-helpers.gradle'
+
+project.ext.pluginVersion = '0.1.0'
+project.ext.fullVersion = project.git.distVersion() ? "${project.pluginVersion}-${project.git.distVersion()}" : project.pluginVersion
+
+project.ext.pluginDesc = [
+        repo       : rootProject.name,
+        version    : project.fullVersion,
+        goCdVersion: '21.2.0',
+        vendorName : 'Harald Nordgård-Hansen',
+        vendorUrl  : 'https://github.com/haraldnh/gocd-docker-step-plugin'
+]
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    library
+}
+
+dependencies {
+    library group: 'javax.json', name: 'javax.json-api', version: '1.1.4'
+    library group: 'org.glassfish', name: 'javax.json', version: '1.1.4'
+    library 'com.spotify:docker-client:8.16.0'
+    compileOnly group: 'cd.go.plugin', name: 'go-plugin-api', version: '19.8.0'
+    testImplementation group: 'cd.go.plugin', name: 'go-plugin-api', version: '19.8.0'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.10.0'
+    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
+    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.9'
+    testImplementation group: 'org.apache.httpcomponents', name: 'fluent-hc', version: '4.5.13'
+    testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
+
+
+    configurations.implementation.extendsFrom(configurations.library)
+}
+
+// build
+
+processResources {
+    filesMatching('**/plugin.xml') { file -> file.expand project.properties }
+}
+
+jar {
+    into('lib') {
+        from configurations.library
+    }
+}
+
+// unit tests
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+}
+
+test {
+    jacoco {
+        includes = ['no.h_nh.*']
+    }
+}
+
+check.dependsOn jacocoTestReport
+jacocoTestReport.mustRunAfter test
+
+github {
+    def lastCommit = project.git.gitRevision()
+
+    owner = System.getenv('GITHUB_USER') ?: 'bob'
+    repo = project.pluginDesc.repo
+    token = System.getenv('GITHUB_TOKEN') ?: 'bad-token'
+    targetCommitish = lastCommit
+    prerelease = !"No".equalsIgnoreCase(System.getenv('PRERELEASE'))
+    assets = project.jar.outputs.files.files
+
+    tagName = "${project.fullVersion}${prerelease ? '-exp' : ''}"
+    name = "${prerelease ? 'Experimental: ' : ''}${project.fullVersion}"
+
+    def lastTag = project.git.getLastTag(prerelease)
+    def changelogHeader = lastTag ? "### Changelog ${lastTag}..${lastCommit.substring(0, 7)}" : "### Changelog"
+    //def changeLog = project.git.getCommitsSinceLastTag(lastTag).replaceAll("\"", "")
+
+    //body = """\n$changelogHeader\n\n${changeLog}\n""".stripIndent().trim()
+    body = "Initial test\n"
+}
+
+githubRelease.dependsOn assemble
