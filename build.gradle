@@ -71,12 +71,6 @@ jacocoTestReport {
     }
 }
 
-test {
-    jacoco {
-        includes = ['no.h_nh.*']
-    }
-}
-
 check.dependsOn jacocoTestReport
 jacocoTestReport.mustRunAfter test
 

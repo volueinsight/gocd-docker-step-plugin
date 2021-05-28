@@ -1,8 +1,12 @@
 package no.h_nh.docker_step;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -178,9 +182,19 @@ public class DockerStepPlugin extends AbstractGoPlugin {
     }
   }
 
-  private String createScript(String[] commands, String workingDirectory) {
-    // FIXME: Create script
-    return "/bin/ls";
+  private String createScript(String[] commands, String workingDirectory) throws IOException {
+    System.out.println(workingDirectory);
+    File scriptfile = File.createTempFile("commands", ".sh", new File(workingDirectory));
+    // TODO: Be able to configure the script header?
+    try (Writer output = new BufferedWriter(new FileWriter(scriptfile))) {
+      output.write("#! /usr/bin/env bash\n\nset -ex\n\n");
+      for (String command : commands) {
+        output.write(command);
+        output.write("\n");
+      }
+    }
+    Runtime.getRuntime().exec("chmod +x " + scriptfile.getAbsolutePath());
+    return "./" + scriptfile.getName();
   }
 
   private void logException(JobConsoleLogger logger, Exception e) {

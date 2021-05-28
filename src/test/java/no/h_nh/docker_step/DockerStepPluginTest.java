@@ -8,6 +8,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -39,7 +40,7 @@ import no.h_nh.docker_step.utils.TestConsoleLogger;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JobConsoleLogger.class, DockerUtils.class, IOUtils.class})
+@PrepareForTest({JobConsoleLogger.class, DockerUtils.class, IOUtils.class, DockerStepPlugin.class})
 public class DockerStepPluginTest {
 
   @Test
@@ -112,6 +113,9 @@ public class DockerStepPluginTest {
     when(DockerUtils.startService(anyString(), anyString(), anyMap())).thenReturn("123");
     when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString())).thenReturn(0L);
 
+    PowerMockito.mockStatic(File.class);
+    when(File.createTempFile(anyString(), anyString(), any(File.class))).thenReturn(new File("/dev/null"));
+
     DefaultGoPluginApiRequest request = new DefaultGoPluginApiRequest(null, null, "execute");
     JsonObject requestBody = Json.createObjectBuilder()
             .add("config", Json.createObjectBuilder()
@@ -167,6 +171,9 @@ public class DockerStepPluginTest {
     PowerMockito.mockStatic(DockerUtils.class);
     when(DockerUtils.startService(anyString(), anyString(), anyMap())).thenReturn("123");
     when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString())).thenReturn(0L);
+
+    PowerMockito.mockStatic(File.class);
+    when(File.createTempFile(anyString(), anyString(), any(File.class))).thenReturn(new File("/dev/null"));
 
     DefaultGoPluginApiRequest request = new DefaultGoPluginApiRequest(null, null, "execute");
     JsonObject requestBody = Json.createObjectBuilder()
