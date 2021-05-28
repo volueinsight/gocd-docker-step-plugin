@@ -1,18 +1,21 @@
 <div class="form_item_block">
-  <label>Image:</label>
+  <label>Image:<span class="asterisk">*</span></label>
   <input type="text" ng-model="image" ng-required="true" />
   <span class="form_error" ng-show="GOINPUTNAME[image].$error.server">{{GOINPUTNAME[IMAGE].$error.server }}</span>
 </div>
 <div class="form_item_block">
-  <label>Pull images:</label>
-  <input type="checkbox" ng-model="pull" ng-required="false" />
+  <div class="checkbox_row">
+    <input id="pull2" type="checkbox" ng-model="pull2" ng-init="pull2 = pull" ng-change="pull = pull2" ng-true-value="true" ng-false-value="false" />
+    <input id="pull" type="hidden" ng-model="pull" value="{{pull}}" />
+    <label for="pull">Pull images</label>
+  </div>
 </div>
 <div class="form_item_block">
-  <label>Commands:</label>
-  <textarea ng-model="commands" ng-required="true" cols="50" rows="5" placeholder="Enter each command on a new line"></textarea>
+  <label>Commands:<span class="asterisk">*</span></label>
+  <textarea ng-model="commands" ng-required="true" style="width: 250px; resize: both;" cols="50" rows="5" placeholder="Enter each command on a new line"></textarea>
   <span class="form_error" ng-show="GOINPUTNAME[commands].$error.server">{{ GOINPUTNAME[commands].$error.server }}</span>
 </div>
 <div class="form_item_block">
   <label>Services:</label>
-  <textarea ng-model="services" ng-required="false" cols="50" rows="5" placeholder="Enter service_name;image, one per line"></textarea>
+  <textarea ng-model="services" ng-required="false" style="width: 250px; resize: both;" cols="50" rows="5" placeholder="Enter service_name;image, one per line"></textarea>
 </div>

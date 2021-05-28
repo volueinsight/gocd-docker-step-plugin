@@ -16,6 +16,6 @@ public class TestConsoleLogger extends JobConsoleLogger {
     @Override
     public void printLine(String line) {
         this.logLines.add(line);
-        System.out.println(line);
+        // System.out.println(line);
     }
 }

@@ -21,7 +21,6 @@ import org.apache.commons.io.IOUtils;
 
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
-import com.sun.security.auth.module.UnixSystem;
 import com.thoughtworks.go.plugin.api.AbstractGoPlugin;
 import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
 import com.thoughtworks.go.plugin.api.annotation.Extension;
@@ -32,6 +31,7 @@ import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.task.JobConsoleLogger;
 
 import no.h_nh.docker_step.utils.DockerUtils;
+import no.h_nh.docker_step.utils.MiscTools;
 import no.h_nh.docker_step.utils.StepConfig;
 
 
@@ -78,7 +78,7 @@ public class DockerStepPlugin extends AbstractGoPlugin {
   private GoPluginApiResponse handleConfig() {
     final Map<String, Object> body = new HashMap<>();
     final String[] args = {"image", "pull", "commands", "services"};
-    final Boolean[] required = {true, false, true, false};
+    final Boolean[] required = {true, true, true, false};
     final String[] defaults = {null, "true", null, null};
 
     for (int i = 0; i < args.length; i++) {
@@ -158,8 +158,7 @@ public class DockerStepPlugin extends AbstractGoPlugin {
         services.add(DockerUtils.startService(e.getKey(), e.getValue(), config.environment));
       }
 
-      final String user = String.format("%d:%d",
-              new UnixSystem().getUid(), new UnixSystem().getGid());
+      final String user = MiscTools.getAgentUser();
       final String scriptPath = createScript(config.commands, config.workingDirectory);
       logger.printLine("----- Starting step commands container -----");
       final long exitCode = DockerUtils.runScript(config.image, scriptPath, config.workingDirectory,
