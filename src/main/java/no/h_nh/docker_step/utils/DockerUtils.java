@@ -88,7 +88,8 @@ public class DockerUtils {
     final List<String> env = new ArrayList<>(envVars.size());
     for (Map.Entry<String, String> entry : envVars.entrySet())
       env.add(entry.getKey() + "=" + entry.getValue());
-    final ContainerConfig config = ContainerConfig.builder().image(image).env(env).build();
+    final ContainerConfig config =
+            ContainerConfig.builder().hostname(name).image(image).env(env).build();
     final ContainerCreation container = getDockerClient().createContainer(config, name);
 
     final List<String> warnings = container.warnings();
