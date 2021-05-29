@@ -105,7 +105,7 @@ public class DockerUtils {
     getDockerClient().startContainer(id);
     logger.printLine("Started container: "+ id);
 
-    // TODO: Find a way to print logs from the serivce container.
+    logServiceContainer(id, name);
 
     return id;
   }
@@ -228,5 +228,41 @@ public class DockerUtils {
     final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
     getDockerClient().removeNetwork(networkId);
     logger.printLine("Removed network: " + networkId);
+  }
+
+  private static void logServiceContainer(String containerId, String service) {
+    Thread thread = new Thread(new LogForService(containerId, service));
+    thread.setDaemon(true);
+    thread.start();
+  }
+
+  static class LogForService implements Runnable {
+    private final String containerId;
+    private final String prefix;
+
+    LogForService(String containerId, String prefix) {
+      this.containerId = containerId;
+      this.prefix = prefix + ": ";
+    }
+
+    @Override
+    public void run() {
+      final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
+      final List<DockerClient.LogsParam> logParams = new ArrayList<>();
+      logParams.add(DockerClient.LogsParam.follow());
+      logParams.add(DockerClient.LogsParam.stdout());
+      logParams.add(DockerClient.LogsParam.stderr());
+      try (final LogStream logStream =
+                   getDockerClient().logs(this.containerId, logParams.toArray(new DockerClient.LogsParam[0]))) {
+        while (logStream.hasNext()) {
+          final String logMessage = StringUtils.chomp(StandardCharsets.UTF_8.decode(logStream.next().content()).toString());
+          for (String logLine : logMessage.split("\n")) {
+            logger.printLine(prefix + logLine);
+          }
+        }
+      } catch (Exception e) {
+        logger.printLine("Exception from " + prefix + e.getMessage());
+      }
+    }
   }
 }
