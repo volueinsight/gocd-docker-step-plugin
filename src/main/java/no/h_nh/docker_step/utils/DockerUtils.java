@@ -136,9 +136,9 @@ public class DockerUtils {
       for (Map.Entry<String, String> entry : envVars.entrySet())
         env.add(entry.getKey() + "=" + entry.getValue());
       final ContainerConfig config = ContainerConfig.builder()
-              .image(image).cmd(script).workingDir("/app").user(user).env(env)
+              .image(image).cmd(script).workingDir("/working").user(user).env(env)
               .attachStdin(true).attachStdout(true).attachStderr(true)
-              .hostConfig(HostConfig.builder().appendBinds(workingDir + ":/app").build())
+              .hostConfig(HostConfig.builder().appendBinds(workingDir + ":/working").build())
               .build();
       final ContainerCreation container = getDockerClient().createContainer(config);
 

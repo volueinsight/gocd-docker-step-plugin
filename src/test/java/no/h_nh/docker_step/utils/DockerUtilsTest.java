@@ -133,8 +133,6 @@ public class DockerUtilsTest {
         ArgumentCaptor<ContainerConfig> containerConfig = ArgumentCaptor.forClass(ContainerConfig.class);
         verify(dockerClient).createContainer(containerConfig.capture(), anyString());
         assertEquals("Image wrong", "busybox:latest", containerConfig.getValue().image());
-        //assertEquals("Working dir incorrect", "/app", containerConfig.getValue().workingDir());
-        //assertEquals("Bind mount not correct", "/some-dir:/app", containerConfig.getValue().hostConfig().binds().get(0));
         assertThat("Environment vars not correct", containerConfig.getValue().env(),
                 hasItems("ENV1=value1", "ENV2=value2"));
     }
@@ -192,8 +190,8 @@ public class DockerUtilsTest {
         ArgumentCaptor<ContainerConfig> containerConfig = ArgumentCaptor.forClass(ContainerConfig.class);
         verify(dockerClient).createContainer(containerConfig.capture());
         assertEquals("Image wrong", "busybox:latest", containerConfig.getValue().image());
-        assertEquals("Working dir incorrect", "/app", containerConfig.getValue().workingDir());
-        assertEquals("Bind mount not correct", "/some-dir:/app", containerConfig.getValue().hostConfig().binds().get(0));
+        assertEquals("Working dir incorrect", "/working", containerConfig.getValue().workingDir());
+        assertEquals("Bind mount not correct", "/some-dir:/working", containerConfig.getValue().hostConfig().binds().get(0));
         assertThat("Environment vars not correct", containerConfig.getValue().env(),
                 hasItems("ENV1=value1", "ENV2=value2"));
     }
