@@ -89,10 +89,9 @@ github {
 
     def lastTag = project.git.getLastTag(prerelease)
     def changelogHeader = lastTag ? "### Changelog ${lastTag}..${lastCommit.substring(0, 7)}" : "### Changelog"
-    //def changeLog = project.git.getCommitsSinceLastTag(lastTag).replaceAll("\"", "")
+    def changeLog = project.git.getCommitsSinceLastTag(lastTag).replaceAll("\"", "")
 
-    //body = """\n$changelogHeader\n\n${changeLog}\n""".stripIndent().trim()
-    body = "Initial test\n"
+    body = """\n$changelogHeader\n\n${changeLog}\n""".stripIndent().trim()
 }
 
 githubRelease.dependsOn assemble
