@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<go-plugin id="docker-step-plugin" version="1">
+<go-plugin id="docker-step" version="1">
   <about>
-    <name>Docker Step Plugin</name>
+    <name>Docker Step</name>
     <version>${project.version}</version>
     <description>Task plugin for running commands inside a docker container</description>
     <target-go-version>17.3</target-go-version>
