@@ -37,8 +37,10 @@ import com.spotify.docker.client.exceptions.ImagePullFailedException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerExit;
+import com.spotify.docker.client.messages.NetworkCreation;
 import com.spotify.docker.client.messages.ProgressMessage;
 import com.thoughtworks.go.plugin.api.task.JobConsoleLogger;
+
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JobConsoleLogger.class, DefaultDockerClient.class})
@@ -121,7 +123,7 @@ public class DockerUtilsTest {
         envs.put("ENV1", "value1");
         envs.put("ENV2", "value2");
 
-        final String id = DockerUtils.startService("serv1", "busybox:latest", envs);
+        final String id = DockerUtils.startService("serv1", "busybox:latest", envs, null);
 
         assertEquals("Wrong ID returned", "123", id);
         assertEquals("Wrong number of lines", 3, logger.logLines.size());
@@ -147,7 +149,7 @@ public class DockerUtilsTest {
         when(dockerClient.createContainer(any(ContainerConfig.class), anyString())).thenThrow(new DockerException("FAIL"));
         DockerUtils.dockerClient = dockerClient;
 
-        DockerUtils.startService("serv1", "bad:image", Collections.emptyMap());
+        DockerUtils.startService("serv1", "bad:image", Collections.emptyMap(), null);
     }
 
     @Test
@@ -173,7 +175,7 @@ public class DockerUtilsTest {
         envs.put("ENV2", "value2");
 
         final long exitCode = DockerUtils.runScript("busybox:latest", "tmpscript.sh",
-                "/some-dir", envs, "10:20");
+                "/some-dir", envs, "10:20", null);
 
         assertEquals("Wrong exit code", 0, exitCode);
         assertEquals("Wrong number of lines", 8, logger.logLines.size());
@@ -211,6 +213,36 @@ public class DockerUtilsTest {
         assertEquals("Wrong number of lines output", 2, logger.logLines.size());
         assertEquals("Console log incorrect", "Stopping container: 123", logger.logLines.get(0));
         assertEquals("Console log incorrect", "Removing container: 123", logger.logLines.get(1));
+    }
+
+    @Test
+    public void createNetwork() throws Exception {
+        final TestConsoleLogger logger = new TestConsoleLogger();
+        PowerMockito.mockStatic(JobConsoleLogger.class);
+        when(JobConsoleLogger.getConsoleLogger()).thenReturn(logger);
+
+        final DefaultDockerClient dockerClient = mock(DefaultDockerClient.class);
+        final NetworkCreation network = mock(NetworkCreation.class);
+        when(network.warnings()).thenReturn(null);
+        when(network.id()).thenReturn("123");
+        when(dockerClient.createNetwork(any())).thenReturn(network);
+        DockerUtils.dockerClient = dockerClient;
+
+        final String id = DockerUtils.createNetwork();
+        assertEquals("Wrong network id", "123", id);
+    }
+
+    @Test
+    public void removeNetwork() throws Exception {
+        final TestConsoleLogger logger = new TestConsoleLogger();
+        PowerMockito.mockStatic(JobConsoleLogger.class);
+        when(JobConsoleLogger.getConsoleLogger()).thenReturn(logger);
+
+        final DefaultDockerClient dockerClient = mock(DefaultDockerClient.class);
+        doNothing().when(dockerClient).removeNetwork(anyString());
+        DockerUtils.dockerClient = dockerClient;
+
+        DockerUtils.removeNetwork("123");
     }
 
     // Helper class to inject "results" from running a script.

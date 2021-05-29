@@ -36,11 +36,12 @@ import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.task.JobConsoleLogger;
 
 import no.h_nh.docker_step.utils.DockerUtils;
+import no.h_nh.docker_step.utils.MiscTools;
 import no.h_nh.docker_step.utils.TestConsoleLogger;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JobConsoleLogger.class, DockerUtils.class, IOUtils.class, DockerStepPlugin.class})
+@PrepareForTest({JobConsoleLogger.class, DockerUtils.class, IOUtils.class, MiscTools.class})
 public class DockerStepPluginTest {
 
   @Test
@@ -110,8 +111,9 @@ public class DockerStepPluginTest {
     when(JobConsoleLogger.getConsoleLogger()).thenReturn(logger);
 
     PowerMockito.mockStatic(DockerUtils.class);
-    when(DockerUtils.startService(anyString(), anyString(), anyMap())).thenReturn("123");
-    when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString())).thenReturn(0L);
+    when(DockerUtils.createNetwork()).thenReturn("test_net");
+    when(DockerUtils.startService(anyString(), anyString(), anyMap(), anyString())).thenReturn("123");
+    when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString(), anyString())).thenReturn(0L);
 
     PowerMockito.mockStatic(File.class);
     when(File.createTempFile(anyString(), anyString(), any(File.class))).thenReturn(new File("/dev/null"));
@@ -145,14 +147,16 @@ public class DockerStepPluginTest {
 
     PowerMockito.verifyStatic(DockerUtils.class);
     DockerUtils.pullImage("ubuntu:latest");
+    DockerUtils.createNetwork();
     Map<String, String> envs = new HashMap<>();
     envs.put("ENV1", "value1");
     envs.put("ENV2", "value2");
-    DockerUtils.startService("serv1", "debian:test", envs);
+    DockerUtils.startService("serv1", "debian:test", envs, null);
     DockerUtils.runScript(eq("ubuntu:latest"), anyString(),
             eq(Paths.get(System.getProperty("user.dir"), "pipelines/test").toAbsolutePath().toString()),
-            eq(envs), anyString());
+            eq(envs), anyString(), anyString());
     DockerUtils.removeContainer("123");
+    DockerUtils.removeNetwork("test_net");
     assertEquals("Expected 2xx response", DefaultGoPluginApiResponse.SUCCESS_RESPONSE_CODE,
         response.responseCode());
     final JsonObject responseBody = Json.createReader(new StringReader(response.responseBody())).readObject();
@@ -169,8 +173,8 @@ public class DockerStepPluginTest {
     when(JobConsoleLogger.getConsoleLogger()).thenReturn(logger);
 
     PowerMockito.mockStatic(DockerUtils.class);
-    when(DockerUtils.startService(anyString(), anyString(), anyMap())).thenReturn("123");
-    when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString())).thenReturn(0L);
+    when(DockerUtils.startService(anyString(), anyString(), anyMap(), anyString())).thenReturn("123");
+    when(DockerUtils.runScript(anyString(), anyString(), anyString(), anyMap(), anyString(), anyString())).thenReturn(0L);
 
     PowerMockito.mockStatic(File.class);
     when(File.createTempFile(anyString(), anyString(), any(File.class))).thenReturn(new File("/dev/null"));
@@ -207,10 +211,10 @@ public class DockerStepPluginTest {
     Map<String, String> envs = new HashMap<>();
     envs.put("ENV1", "value1");
     envs.put("ENV2", "value2");
-    DockerUtils.startService("serv1", "debian:test", envs);
+    DockerUtils.startService("serv1", "debian:test", envs, null);
     DockerUtils.runScript(eq("ubuntu:latest"), anyString(),
             eq(Paths.get(System.getProperty("user.dir"), "pipelines/test").toAbsolutePath().toString()),
-            eq(envs), anyString());
+            eq(envs), anyString(), anyString());
     DockerUtils.removeContainer("123");
     assertEquals("Expected 2xx response", DefaultGoPluginApiResponse.SUCCESS_RESPONSE_CODE,
             response.responseCode());

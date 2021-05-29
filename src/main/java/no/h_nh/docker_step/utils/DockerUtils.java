@@ -17,6 +17,8 @@ import com.spotify.docker.client.exceptions.ImagePullFailedException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.NetworkConfig;
+import com.spotify.docker.client.messages.NetworkCreation;
 import com.thoughtworks.go.plugin.api.task.JobConsoleLogger;
 
 
@@ -73,12 +75,13 @@ public class DockerUtils {
    * @param name    Name to be known as.
    * @param image   Image to create the container from.
    * @param envVars Environment of container
+   * @param network Network to attach to
    * @return Id of container created.
    * @throws DockerException If an error occurs creating the container.
    * @throws InterruptedException If the process is interrupted.
    */
-  public static String startService(String name, String image, Map<String, String> envVars)
-          throws DockerException, InterruptedException {
+  public static String startService(String name, String image, Map<String, String> envVars,
+          String network) throws DockerException, InterruptedException {
     final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
     logger.printLine("Starting service '" + name + "' from image: " + image);
 
@@ -95,6 +98,10 @@ public class DockerUtils {
 
     final String id = container.id();
     logger.printLine("Created container: " + name + "/" + id);
+    if (network != null) {
+      getDockerClient().connectToNetwork(id, network);
+      logger.printLine("Attached to network: " + network);
+    }
     getDockerClient().startContainer(id);
     logger.printLine("Started container: "+ id);
 
@@ -117,7 +124,8 @@ public class DockerUtils {
    * @throws InterruptedException If the process is interrupted.
    */
   public static long runScript(String image, String script, String workingDir,
-          Map<String, String> envVars, String user) throws DockerException, InterruptedException {
+          Map<String, String> envVars, String user, String network)
+          throws DockerException, InterruptedException {
     final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
     logger.printLine("Creating container for script with image: " + image);
 
@@ -140,6 +148,10 @@ public class DockerUtils {
 
       id = container.id();
       logger.printLine("Created container: " + id);
+      if (network != null) {
+        getDockerClient().connectToNetwork(id, network);
+        logger.printLine("Attached to network: " + network);
+      }
       getDockerClient().startContainer(id);
       logger.printLine("Started container: " + id);
 
@@ -185,5 +197,36 @@ public class DockerUtils {
 
     logger.printLine("Removing container: " + containerId);
     getDockerClient().removeContainer(containerId, RemoveContainerParam.removeVolumes());
+  }
+
+  /**
+   * Create a (private) network for attaching container and services to.
+   * This is neeed so they see each other and can see each other by name.
+   *
+   * @return Identifier of the network created.
+   */
+  public static String createNetwork() throws DockerException, InterruptedException {
+    final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
+    logger.printLine("Creating services network.");
+    final NetworkConfig config = NetworkConfig.builder().name("step_services").build();
+    final NetworkCreation network = getDockerClient().createNetwork(config);
+
+    final String warning = network.warnings();
+    if (warning != null)
+      logger.printLine("WARNING: " + warning);
+
+    final String id = network.id();
+    logger.printLine("Network created: " + id);
+    return id;
+  }
+
+  /**
+   * Remove a (private) network.
+   * @param networkId network to remove.
+   */
+  public static void removeNetwork(String networkId) throws DockerException, InterruptedException {
+    final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
+    getDockerClient().removeNetwork(networkId);
+    logger.printLine("Removed network: " + networkId);
   }
 }

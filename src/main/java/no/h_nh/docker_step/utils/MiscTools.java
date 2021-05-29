@@ -1,5 +1,6 @@
 package no.h_nh.docker_step.utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -27,5 +28,9 @@ public class MiscTools {
             // Ignore
         }
         return null;
+    }
+
+    public static File createTempFile(String workingDirectory) throws IOException {
+        return File.createTempFile("commands", ".sh", new File(workingDirectory));
     }
 }

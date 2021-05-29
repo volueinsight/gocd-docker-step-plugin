@@ -145,7 +145,8 @@ public class DockerStepPlugin extends AbstractGoPlugin {
   private long executeStep(StepConfig config)
           throws DockerException, InterruptedException, IOException {
     final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
-    List<String> services = null;
+    List<String> serviceIds = null;
+    String net = null;
     try {
       if (config.doPull) {
         DockerUtils.pullImage(config.image);
@@ -153,16 +154,18 @@ public class DockerStepPlugin extends AbstractGoPlugin {
           DockerUtils.pullImage(serviceImage);
       }
 
-      services = new ArrayList<>(config.services.size());
+      if (!config.services.isEmpty())
+        net = DockerUtils.createNetwork();
+      serviceIds = new ArrayList<>(config.services.size());
       for (Map.Entry<String, String> e : config.services.entrySet()) {
-        services.add(DockerUtils.startService(e.getKey(), e.getValue(), config.environment));
+        serviceIds.add(DockerUtils.startService(e.getKey(), e.getValue(), config.environment, net));
       }
 
       final String user = MiscTools.getAgentUser();
       final String scriptPath = createScript(config.commands, config.workingDirectory);
       logger.printLine("----- Starting step commands container -----");
       final long exitCode = DockerUtils.runScript(config.image, scriptPath, config.workingDirectory,
-              config.environment, user);
+              config.environment, user, net);
       logger.printLine("----- Finished step commands container -----");
       return exitCode;
     } catch (Exception e) {
@@ -170,20 +173,26 @@ public class DockerStepPlugin extends AbstractGoPlugin {
       logException(logger, e);
       throw e;
     } finally {
-      if (services != null)
-        for (String service : services)
+      if (serviceIds != null)
+        for (String service : serviceIds)
           try {
             DockerUtils.removeContainer(service);
           } catch (Exception e) {
             logger.printLine("Exception occurred while removing container");
             logException(logger, e);
           }
+      if (net != null)
+        try {
+          DockerUtils.removeNetwork(net);
+        } catch (Exception e) {
+          logger.printLine("Exception occurred while removing network");
+          logException(logger, e);
+        }
     }
   }
 
   private String createScript(String[] commands, String workingDirectory) throws IOException {
-    System.out.println(workingDirectory);
-    File scriptfile = File.createTempFile("commands", ".sh", new File(workingDirectory));
+    File scriptfile = MiscTools.createTempFile(workingDirectory);
     // TODO: Be able to configure the script header?
     try (Writer output = new BufferedWriter(new FileWriter(scriptfile))) {
       output.write("#! /usr/bin/env bash\n\nset -ex\n\n");
