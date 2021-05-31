@@ -135,6 +135,9 @@ public class DockerUtils {
       final List<String> env = new ArrayList<>(envVars.size());
       for (Map.Entry<String, String> entry : envVars.entrySet())
         env.add(entry.getKey() + "=" + entry.getValue());
+      // Unless already set, make HOME point to /working to avoid a number of problems.
+      if (!envVars.containsKey("HOME"))
+        env.add("HOME=/working");
       final ContainerConfig config = ContainerConfig.builder()
               .image(image).cmd(script).workingDir("/working").user(user).env(env)
               .attachStdin(true).attachStdout(true).attachStderr(true)
