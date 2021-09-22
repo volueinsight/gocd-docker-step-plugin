@@ -21,15 +21,17 @@ public class StepConfig {
     public final Map<String, String> services;
     public final String workingDirectory;
     public final Map<String, String> environment;
+    public final String[] mounts;
 
     private StepConfig(String image, boolean doPull, String[] commands, Map<String, String> services,
-            String workingDirectory, Map<String, String> environment) {
+            String workingDirectory, Map<String, String> environment, String[] mounts) {
         this.image = image;
         this.doPull = doPull;
         this.commands = commands;
         this.services = Collections.unmodifiableMap(services);
         this.workingDirectory = workingDirectory;
         this.environment = Collections.unmodifiableMap(environment);
+        this.mounts = mounts;
     }
 
     public static StepConfig parse(JsonObject request) {
@@ -43,8 +45,9 @@ public class StepConfig {
         Map<String, String> environment = getMapValue(context, "environmentVariables");
         Path wd = Paths.get(System.getProperty("user.dir"), context.getString("workingDirectory"));
         String workingDirectory = wd.toAbsolutePath().toString();
+        String[] mounts = getListValue(config, "mounts");
 
-        return new StepConfig(image, doPull, commands, services, workingDirectory, environment);
+        return new StepConfig(image, doPull, commands, services, workingDirectory, environment, mounts);
     }
 
     private static String getValue(JsonObject object, String key) {

@@ -172,8 +172,10 @@ public class DockerUtilsTest {
         envs.put("ENV1", "value1");
         envs.put("ENV2", "value2");
 
+        final String[] mounts = new String[] {"/cache:/cache", "/misc:/misc:ro"};
+
         final long exitCode = DockerUtils.runScript("busybox:latest", "tmpscript.sh",
-                "/some-dir", envs, "10:20", null);
+                "/some-dir", envs, "10:20", null, mounts);
 
         assertEquals("Wrong exit code", 0, exitCode);
         assertEquals("Wrong number of lines", 8, logger.logLines.size());
@@ -191,7 +193,10 @@ public class DockerUtilsTest {
         verify(dockerClient).createContainer(containerConfig.capture());
         assertEquals("Image wrong", "busybox:latest", containerConfig.getValue().image());
         assertEquals("Working dir incorrect", "/working", containerConfig.getValue().workingDir());
+        assertEquals("Number of bind mounts wrong", 3, containerConfig.getValue().hostConfig().binds().size());
         assertEquals("Bind mount not correct", "/some-dir:/working", containerConfig.getValue().hostConfig().binds().get(0));
+        assertEquals("Bind mount2 not correct", "/cache:/cache", containerConfig.getValue().hostConfig().binds().get(1));
+        assertEquals("Bind mount3 not correct", "/misc:/misc:ro", containerConfig.getValue().hostConfig().binds().get(2));
         assertThat("Environment vars not correct", containerConfig.getValue().env(),
                 hasItems("ENV1=value1", "ENV2=value2"));
     }

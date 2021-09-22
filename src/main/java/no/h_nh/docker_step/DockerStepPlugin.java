@@ -165,7 +165,7 @@ public class DockerStepPlugin extends AbstractGoPlugin {
       final String scriptPath = createScript(config.commands, config.workingDirectory);
       logger.printLine("----- Starting step commands container -----");
       final long exitCode = DockerUtils.runScript(config.image, scriptPath, config.workingDirectory,
-              config.environment, user, net);
+              config.environment, user, net, config.mounts);
       logger.printLine("----- Finished step commands container -----");
       return exitCode;
     } catch (Exception e) {

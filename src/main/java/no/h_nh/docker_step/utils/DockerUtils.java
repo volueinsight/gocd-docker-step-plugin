@@ -120,12 +120,14 @@ public class DockerUtils {
    * @param workingDir Working directory to be bind mounted into the container.
    * @param envVars    Environment
    * @param user       Uid:gid to run as
+   * @param network    Network to connect container to
+   * @param mounts     Additional bind mounts to use
    * @return Exit code of script
    * @throws DockerException If an error occurs creating the container.
    * @throws InterruptedException If the process is interrupted.
    */
   public static long runScript(String image, String script, String workingDir,
-          Map<String, String> envVars, String user, String network)
+          Map<String, String> envVars, String user, String network, String[] mounts)
           throws DockerException, InterruptedException {
     final JobConsoleLogger logger = JobConsoleLogger.getConsoleLogger();
     logger.printLine("Creating container for script with image: " + image);
@@ -141,7 +143,9 @@ public class DockerUtils {
       final ContainerConfig config = ContainerConfig.builder()
               .image(image).cmd(script).workingDir("/working").user(user).env(env)
               .attachStdin(true).attachStdout(true).attachStderr(true)
-              .hostConfig(HostConfig.builder().appendBinds(workingDir + ":/working").build())
+              .hostConfig(HostConfig.builder()
+                      .appendBinds(workingDir + ":/working")
+                      .appendBinds(mounts).build())
               .build();
       final ContainerCreation container = getDockerClient().createContainer(config);
 
